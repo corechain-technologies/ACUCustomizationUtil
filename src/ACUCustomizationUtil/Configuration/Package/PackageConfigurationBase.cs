@@ -23,6 +23,7 @@ public abstract class PackageConfigurationBase : IPackageConfiguration
     public string? PkgName { get; set; }
     public string? PkgDirectory { get; set; }
     public string? PkgSuffix { get; set; }
+    public int? Timeout { get; set; }
     public string? PackageFilePath { get; private set; }
     public abstract bool IsNotNull { get; }
 

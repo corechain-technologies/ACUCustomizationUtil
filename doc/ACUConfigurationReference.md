@@ -1,4 +1,4 @@
-# Acumatica Customization Util (ACU)
+﻿# Acumatica Customization Util (ACU)
 
 ## Configuration Reference (version 26.08.21.1408)
 ```
@@ -39,6 +39,7 @@
     "pkgDirectory": "C:\\Acumatica\\projects\\ACUCustomization\\pkg"                                                          Package directory
     "tenant": null,                                                                                                           Tenant to login
     "branch": null											                      Branch to login	
+    "timeout": null,                                                          HTTP timeout in seconds for the REST client (default 100)
   },
 
   "src": {                                                                                                                    Parameters for code command

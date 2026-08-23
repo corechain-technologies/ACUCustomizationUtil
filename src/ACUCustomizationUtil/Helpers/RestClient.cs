@@ -44,6 +44,14 @@ namespace ACUCustomizationUtils.Helpers
                 },
             };
 
+            // HttpClient defaults to a 100-second timeout, which a cold or slow
+            // instance (site warmup, large project export) can legitimately
+            // exceed. Allow configuration to raise it; otherwise keep the default.
+            if (configuration.Pkg.Timeout is > 0)
+            {
+                _client.Timeout = TimeSpan.FromSeconds(configuration.Pkg.Timeout.Value);
+            }
+
             Request.Login login = new()
             {
                 Name = username,

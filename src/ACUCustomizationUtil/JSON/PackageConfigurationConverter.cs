@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Globalization;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using ACUCustomizationUtils.Configuration.Package;
@@ -52,6 +53,12 @@ public class PackageConfigurationConverter : JsonConverter<IPackageConfiguration
                     break;
                 case nameof(package.PkgSuffix):
                     package.PkgSuffix = reader.GetString().NormalizeEnvVariables();
+                    break;
+                case nameof(package.Timeout):
+                    package.Timeout =
+                        reader.TokenType == JsonTokenType.Number
+                            ? reader.GetInt32()
+                            : int.Parse(reader.GetString()!, CultureInfo.InvariantCulture);
                     break;
             }
         }
