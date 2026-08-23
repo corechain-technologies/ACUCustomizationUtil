@@ -1,4 +1,6 @@
-﻿using ACUCustomizationUtils.Configuration.ACU;
+﻿using System.Globalization;
+
+using ACUCustomizationUtils.Configuration.ACU;
 using ACUCustomizationUtils.Helpers;
 using ACUCustomizationUtils.Validators.Package;
 
@@ -178,7 +180,12 @@ public class PackageService(ILogger<PackageService> logger) : IPackageService
     {
         string[] erpVersion = config.Erp.ErpVersion!.Split('.');
         if (
-            decimal.TryParse(erpVersion[0] + "." + erpVersion[1], out decimal result)
+            decimal.TryParse(
+                erpVersion[0] + "." + erpVersion[1],
+                NumberStyles.Number,
+                CultureInfo.InvariantCulture,
+                out decimal result
+            )
             && result >= 22.2m
         )
         {
