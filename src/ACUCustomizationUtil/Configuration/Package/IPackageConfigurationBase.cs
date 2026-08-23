@@ -16,6 +16,7 @@ public interface IPackageConfiguration
     string? PkgName { get; }
     string? PkgDirectory { get; }
     string? PkgSuffix { get; set; }
+    int? Timeout { get; }
 
     [JsonIgnore]
     string? PackageFilePath { get; }
