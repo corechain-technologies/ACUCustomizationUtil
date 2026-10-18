@@ -55,3 +55,6 @@ bin
 packages
 /proj/packages
 /release/*
+
+# repowise local index (not a source of truth)
+.repowise/
