@@ -28,7 +28,16 @@ public static class Program
 {
     private static async Task<int> Main(string[] args)
     {
-        SerilogBuilder.Build();
+        try
+        {
+            SerilogBuilder.Build();
+        }
+        catch (ArgumentException ex) when (ex.ParamName == "ACU_CONSOLE_ONLY")
+        {
+            // Do not route configuration rejection through a potentially file-backed logger.
+            Console.Error.WriteLine("ACU_CONSOLE_ONLY must be exactly true or false, or unset.");
+            return 1;
+        }
         try
         {
             using Microsoft.Extensions.Hosting.IHost host = HostBuilder.Build(args);
