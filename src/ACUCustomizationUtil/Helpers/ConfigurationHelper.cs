@@ -80,6 +80,35 @@ public static class ConfigurationHelper
             logger.LogInformation("[{Type}] {Key} : {Value}", type, name, value);
     }
 
+    /// <summary>
+    /// Project the configuration into a JSON-ready document keyed by section and
+    /// camelCase property name, with every <c>[Secret]</c> property replaced by the
+    /// mask. Shares the reflection walk with <see cref="PrintConfiguration{T}"/>, so
+    /// the two can never disagree about what is secret.
+    /// </summary>
+    public static SortedDictionary<string, SortedDictionary<string, object?>> ToMaskedDocument(IAcuConfiguration config)
+    {
+        List<(string?, string, object)> values = new List<(string?, string, object)>();
+        ReadConfigurationValues(config, nameof(IAcuConfiguration), values);
+
+        SortedDictionary<string, SortedDictionary<string, object?>> document = new(StringComparer.Ordinal);
+        foreach ((string? section, string name, object value) in values)
+        {
+            if (section == null || section == nameof(IAcuConfiguration))
+                continue;
+            string sectionKey = JsonNamingPolicy.CamelCase.ConvertName(section);
+            if (!document.TryGetValue(sectionKey, out SortedDictionary<string, object?>? fields))
+                document[sectionKey] = fields = new SortedDictionary<string, object?>(StringComparer.Ordinal);
+            fields[JsonNamingPolicy.CamelCase.ConvertName(name)] = value switch
+            {
+                Uri uri => uri.ToString(),
+                _ => value,
+            };
+        }
+
+        return document;
+    }
+
     private static IAcuConfiguration ReadConfig(string? filename)
     {
         if (filename == null || !File.Exists(filename))

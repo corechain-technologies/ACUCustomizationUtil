@@ -24,6 +24,7 @@ public class RootCommandBuilder
     private readonly ICommandBuilder _siteCommandBuilder;
     private readonly ICommandBuilder _packageCommandBuilder;
     private readonly ICommandBuilder _codeCommandBuilder;
+    private readonly ICommandBuilder _configCommandBuilder;
 
     public RootCommandBuilder(IServiceProvider serviceProvider)
     {
@@ -31,6 +32,7 @@ public class RootCommandBuilder
         _siteCommandBuilder = serviceProvider.GetRequiredService<SiteCommandBuilder>();
         _packageCommandBuilder = serviceProvider.GetRequiredService<PackageCommandBuilder>();
         _codeCommandBuilder = serviceProvider.GetRequiredService<SrcCommandBuilder>();
+        _configCommandBuilder = serviceProvider.GetRequiredService<ConfigCommandBuilder>();
 
         _configOption = BuildConfigOption();
         _userConfigOption = BuildUserConfigOption();
@@ -42,9 +44,19 @@ public class RootCommandBuilder
             .BuildErpCommand()
             .BuildSiteCommand()
             .BuildProjectCommand()
-            .BuildPackageCommand();
+            .BuildPackageCommand()
+            .BuildConfigCommand();
 
         return _rootCommand!;
+    }
+
+    private RootCommandBuilder BuildConfigCommand()
+    {
+        Command configCommand = _configCommandBuilder
+            .SetGlobalOptions(_configOption, _userConfigOption)
+            .BuildCommand();
+        _rootCommand?.AddCommand(configCommand);
+        return this;
     }
 
     private RootCommandBuilder BuildRootCommand()
