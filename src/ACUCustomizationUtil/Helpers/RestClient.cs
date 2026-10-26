@@ -235,18 +235,17 @@ namespace ACUCustomizationUtils.Helpers
             return message;
         }
 
-        private static readonly JsonSerializerOptions ResponseJsonOptions = new(JsonSerializerDefaults.Web);
         private const int MaxServerDetailLength = 1000;
 
         private async Task<T> PostAsync<T>(string resource, object? model)
             where T : RestModel.Logs
         {
             using HttpResponseMessage response = await _client.PostAsJsonAsync(resource, model);
-            string body = await response.Content.ReadAsStringAsync();
+            // PostAsJsonAsync buffers the response content, so it can be read again as text below.
             try
             {
-                // Success rule unchanged: the response deserializes into the expected model.
-                T? result = JsonSerializer.Deserialize<T>(body, ResponseJsonOptions);
+                // Success rule and decoding unchanged: the response deserializes into the expected model.
+                T? result = await response.Content.ReadFromJsonAsync<T>();
                 if (result != null)
                     return result;
             }
@@ -254,6 +253,8 @@ namespace ACUCustomizationUtils.Helpers
             {
                 // Fall through: report what the server actually said instead of the model mismatch.
             }
+
+            string body = await response.Content.ReadAsStringAsync();
 
             throw new HttpRequestException(
                 $"{resource} failed: HTTP {(int)response.StatusCode} {response.ReasonPhrase}. "
@@ -265,12 +266,20 @@ namespace ACUCustomizationUtils.Helpers
 
         /// <summary>
         /// The server's own explanation of a failed call: the customization API's <c>log</c> entries,
-        /// else a standard error body's message fields, else the bounded raw text.
+        /// else a standard error body's message fields, else the raw text (an HTML page is
+        /// reduced to its title). The result is single-line, control-character free and bounded.
         /// </summary>
         private static string DescribeServerResponse(string body)
         {
             if (string.IsNullOrWhiteSpace(body))
                 return "(empty response)";
+            if (body.TrimStart().StartsWith('<'))
+            {
+                System.Text.RegularExpressions.Match title = System.Text.RegularExpressions.Regex.Match(
+                    body, @"<title[^>]*>(.*?)</title>",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
+                return Bound(title.Success ? $"HTML page: {title.Groups[1].Value}" : "(HTML page without title)");
+            }
             try
             {
                 using JsonDocument document = JsonDocument.Parse(body);
@@ -304,7 +313,12 @@ namespace ACUCustomizationUtils.Helpers
             return Bound(body.Trim());
         }
 
-        private static string Bound(string text) =>
-            text.Length <= MaxServerDetailLength ? text : text[..MaxServerDetailLength] + "…";
+        private static string Bound(string text)
+        {
+            // One line, no control characters (no terminal escapes or log-line injection).
+            string clean = string.Join(' ', text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+            clean = new string(clean.Where(c => !char.IsControl(c)).ToArray());
+            return clean.Length <= MaxServerDetailLength ? clean : clean[..(MaxServerDetailLength - 1)] + "…";
+        }
     }
 }

@@ -18,7 +18,6 @@ internal static class Messages
     public const string DbProviderMySql = "mysql";
     public const string MySqlDefaultPort = "3306";
 
-    public const string DeserializeError = "Deserialization failed";
     public const string ErrorLogType = "error";
 
     public static class TenantMode
