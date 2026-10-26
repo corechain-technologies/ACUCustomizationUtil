@@ -235,11 +235,76 @@ namespace ACUCustomizationUtils.Helpers
             return message;
         }
 
+        private static readonly JsonSerializerOptions ResponseJsonOptions = new(JsonSerializerDefaults.Web);
+        private const int MaxServerDetailLength = 1000;
+
         private async Task<T> PostAsync<T>(string resource, object? model)
+            where T : RestModel.Logs
         {
             using HttpResponseMessage response = await _client.PostAsJsonAsync(resource, model);
-            return await response.Content.ReadFromJsonAsync<T>()
-                ?? throw new Exception(Messages.DeserializeError);
+            string body = await response.Content.ReadAsStringAsync();
+            try
+            {
+                // Success rule unchanged: the response deserializes into the expected model.
+                T? result = JsonSerializer.Deserialize<T>(body, ResponseJsonOptions);
+                if (result != null)
+                    return result;
+            }
+            catch (JsonException)
+            {
+                // Fall through: report what the server actually said instead of the model mismatch.
+            }
+
+            throw new HttpRequestException(
+                $"{resource} failed: HTTP {(int)response.StatusCode} {response.ReasonPhrase}. "
+                    + $"Server: {DescribeServerResponse(body)}",
+                null,
+                response.StatusCode
+            );
         }
+
+        /// <summary>
+        /// The server's own explanation of a failed call: the customization API's <c>log</c> entries,
+        /// else a standard error body's message fields, else the bounded raw text.
+        /// </summary>
+        private static string DescribeServerResponse(string body)
+        {
+            if (string.IsNullOrWhiteSpace(body))
+                return "(empty response)";
+            try
+            {
+                using JsonDocument document = JsonDocument.Parse(body);
+                JsonElement root = document.RootElement;
+                if (root.ValueKind == JsonValueKind.Object)
+                {
+                    List<string> parts = new();
+                    if (root.TryGetProperty("log", out JsonElement log) && log.ValueKind == JsonValueKind.Array)
+                        foreach (JsonElement entry in log.EnumerateArray())
+                            if (entry.ValueKind == JsonValueKind.Object
+                                && entry.TryGetProperty("message", out JsonElement message)
+                                && message.ValueKind == JsonValueKind.String)
+                            {
+                                string type = entry.TryGetProperty("logType", out JsonElement t) && t.ValueKind == JsonValueKind.String
+                                    ? t.GetString()!
+                                    : "log";
+                                parts.Add($"[{type}] {message.GetString()}");
+                            }
+                    foreach (string field in new[] { "message", "exceptionMessage", "error", "title", "detail" })
+                        if (root.TryGetProperty(field, out JsonElement value) && value.ValueKind == JsonValueKind.String)
+                            parts.Add(value.GetString()!);
+                    if (parts.Count > 0)
+                        return Bound(string.Join(" | ", parts));
+                }
+            }
+            catch (JsonException)
+            {
+                // Not JSON: fall back to the raw text.
+            }
+
+            return Bound(body.Trim());
+        }
+
+        private static string Bound(string text) =>
+            text.Length <= MaxServerDetailLength ? text : text[..MaxServerDetailLength] + "…";
     }
 }
