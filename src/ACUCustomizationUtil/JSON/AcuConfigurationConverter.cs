@@ -26,7 +26,9 @@ public class AcuConfigurationConverter : JsonConverter<IAcuConfiguration>
         {
             if (reader.TokenType == JsonTokenType.EndObject)
             {
-                configuration.OnDeserialized();
+                // Defaults are applied once, to the merged result (ConfigurationHelper.GetConfiguration).
+                // Defaulting each source here would turn defaults into explicit values that override
+                // earlier sources during the merge.
                 return configuration;
             }
 

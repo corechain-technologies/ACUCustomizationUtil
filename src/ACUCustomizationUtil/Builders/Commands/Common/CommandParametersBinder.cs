@@ -28,7 +28,6 @@ public abstract class CommandParametersBinder : BinderBase<IAcuConfiguration>
         FileInfo? configFile = bindingContext.ParseResult.GetValueForOption(_configFile);
         FileInfo? userConfigFile = bindingContext.ParseResult.GetValueForOption(_userConfigFile);
         IAcuConfiguration userInput = GetUserConfiguration(bindingContext, _commandOptions);
-        userInput.OnDeserialized();
         IAcuConfiguration acuConfiguration = ConfigurationHelper.GetConfiguration(
             configFile,
             userConfigFile,

@@ -57,6 +57,10 @@ public static class ConfigurationHelper
             throw new Exception($"ACU configuration is null or empty");
         }
 
+        //Apply defaults once, after the merge. Applied per source, a default (e.g. iisAppPool =
+        //DefaultAppPool) became an explicit value that overrode the same field from earlier sources.
+        result.OnDeserialized();
+
         //Derive the DB connection string after the merge so that discrete DB fields
         //(dbProvider, sqlServerName, dbName, dbUser, dbPassword) from any source are respected
         result.Site.DeriveDbConnectionString();
