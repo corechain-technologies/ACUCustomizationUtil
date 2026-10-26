@@ -33,6 +33,8 @@ public abstract class AcuConfigurationBase : IJsonOnDeserialized, IAcuConfigurat
     public ISrcConfiguration Src { get; init; }
     public abstract bool IsNotNull { get; }
 
+    // Called once by ConfigurationHelper.GetConfiguration on the merged result. The attribute is
+    // inert here (IAcuConfiguration uses a custom converter); do not call this per source.
     [OnDeserialized]
     public virtual void OnDeserialized()
     {

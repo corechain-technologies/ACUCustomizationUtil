@@ -125,8 +125,9 @@ public class ErpCommandBuilder : CommandBuilderBase
     {
         return new Option<string>(
             name: "--installerName",
-            description: "Name of ERP installer file",
-            getDefaultValue: () => Messages.AcumaticaErpInstallMsi
+            // No option-level default: an omitted option must not override a configured value.
+            // ErpConfigurationBase.SetDefaultValues supplies the default after the merge.
+            description: $"Name of ERP installer file (default: {Messages.AcumaticaErpInstallMsi})"
         );
     }
 

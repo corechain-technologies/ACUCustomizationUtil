@@ -39,9 +39,9 @@ public class ConfigCommandBuilder : CommandBuilderBase
 }
 
 /// <summary>
-/// Binder with no command-specific options. The empty <see cref="AcuConfiguration"/>
-/// still runs <c>OnDeserialized</c> (like every binder), so the result reflects the
-/// defaults a real command input would contribute.
+/// Binder with no command-specific options: it contributes an empty
+/// <see cref="AcuConfiguration"/>. As for every command, defaults are applied once to
+/// the merged result (ConfigurationHelper.GetConfiguration).
 /// </summary>
 public class ConfigShowBinder(
     Option<FileInfo> configFile,
