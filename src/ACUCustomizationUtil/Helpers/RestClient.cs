@@ -275,10 +275,8 @@ namespace ACUCustomizationUtils.Helpers
                 return "(empty response)";
             if (body.TrimStart().StartsWith('<'))
             {
-                System.Text.RegularExpressions.Match title = System.Text.RegularExpressions.Regex.Match(
-                    body, @"<title[^>]*>(.*?)</title>",
-                    System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
-                return Bound(title.Success ? $"HTML page: {title.Groups[1].Value}" : "(HTML page without title)");
+                string? title = HtmlTitle(body);
+                return Bound(title != null ? $"HTML page: {title}" : "(HTML page without title)");
             }
             try
             {
@@ -311,6 +309,19 @@ namespace ACUCustomizationUtils.Helpers
             }
 
             return Bound(body.Trim());
+        }
+
+        /// <summary>First &lt;title&gt; element's text; single forward scan, linear in body length.</summary>
+        private static string? HtmlTitle(string body)
+        {
+            int open = body.IndexOf("<title", StringComparison.OrdinalIgnoreCase);
+            if (open < 0)
+                return null;
+            int start = body.IndexOf('>', open);
+            if (start < 0)
+                return null;
+            int end = body.IndexOf("</title", start + 1, StringComparison.OrdinalIgnoreCase);
+            return end < 0 ? null : body[(start + 1)..end];
         }
 
         private static string Bound(string text)
